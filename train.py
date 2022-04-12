@@ -7,7 +7,7 @@ from datasets import load_dataset
 
 from util import find_subarray
 
-dataset = load_dataset("json", data_files="toy.json", split="train")
+dataset = load_dataset("json", data_files="data.json", split="train")
 dataset = dataset.train_test_split(test_size=0.15)
 
 model = AutoModelForMaskedLM.from_pretrained('microsoft/codebert-base-mlm')
