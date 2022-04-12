@@ -46,7 +46,7 @@ def tokenize_function(example):
     return result
 
 tokenized_datasets = dataset.map(
-    tokenize_function, batched=False, remove_columns=["Tokens", "Mask"]
+    tokenize_function, batched=False, remove_columns=["Tokens"]
 )
 
 # Slicing produces a list of lists for each feature
