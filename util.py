@@ -12,6 +12,7 @@ def rolling_window(a, window):
 # >>> find_subarray(a, b)
 # array([0, 4])
 def find_subarray(a, b):
+    a = np.array(a)
     temp = rolling_window(a, len(b))
     result = np.where(np.all(temp == b, axis=1))
     return result[0]
