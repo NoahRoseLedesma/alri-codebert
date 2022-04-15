@@ -3,6 +3,7 @@ from transformers import AutoModelForMaskedLM
 from transformers import AutoTokenizer
 from transformers import DataCollatorForLanguageModeling
 from transformers import Trainer
+from transformers import TrainingArguments
 from datasets import load_dataset, load_from_disk
 import os
 
@@ -85,19 +86,18 @@ else:
 
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm_probability=1.0)
 
+args = TrainingArguments(output_dir="output", report_to="wandb")
 trainer = Trainer(
     model=model,
     data_collator=data_collator,
     train_dataset=lm_datasets["train"],
     eval_dataset=lm_datasets["test"],
+    args=args,
 )
 
-baseline_results = trainer.evaluate()
-print("Evaluaton (before fine-tune):", baseline_results)
 train_result = trainer.train()
 eval_results = trainer.evaluate()
-print("Evaluaton (before fine-tune):", baseline_results)
-print("Evaluaton (after fine-tune):", eval_results)
+print("Evaluaton:", eval_results)
 
 # Save the model
 print("Saving model...")
