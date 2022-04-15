@@ -3,3 +3,5 @@ venv/
 model/
 *.json
 Dockerfile
+dataset_cache/
+output/
