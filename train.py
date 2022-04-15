@@ -79,6 +79,9 @@ if not os.path.exists("dataset_cache"):
 
     # Save the processed datasets to disk
     print("Saving processed dataset to disk")
+    # Create the cache directory if it doesn't exist
+    if not os.path.exists("dataset_cache"):
+        os.mkdir("dataset_cache")
     lm_datasets.save_to_disk("dataset_cache/")
 else:
     print("Loading processed dataset from disk")
