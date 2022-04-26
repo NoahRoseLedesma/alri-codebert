@@ -4,33 +4,34 @@ from transformers import AutoTokenizer
 from transformers import DataCollatorForLanguageModeling
 from transformers import Trainer
 from transformers import TrainingArguments
-from datasets import load_dataset, load_from_disk
+from datasets import load_dataset, load_from_disk, load_metric
 import os
 
 from util import find_subarray
+from eval import compute_classification_metrics
 
 model = AutoModelForMaskedLM.from_pretrained('microsoft/codebert-base-mlm')
 tokenizer = AutoTokenizer.from_pretrained('microsoft/codebert-base-mlm',
                                           add_prefix_space=True)
+
+# Token sequence for `role="false"`
+role_false_ids = np.array([774, 5457, 22, 3950, 22])
+# Token sequence for `role="True"`
+role_true_ids = np.array([774, 5457, 22, 1528, 22])
 
 # Check if the dataset directory exists
 if not os.path.exists("dataset_cache"):
     dataset = load_dataset("json", data_files="data.json", split="train")
     dataset = dataset.train_test_split(test_size=0.15)
 
-    # Token sequence for `role="false"`
-    role_false_input_ids = np.array([774, 5457, 22, 3950, 22])
-    # Token sequence for `role="True"`
-    role_true_input_ids = np.array([774, 5457, 22, 1528, 22])
-
     def tokenize_function(examples):
         result = tokenizer(examples["Tokens"], is_split_into_words=True)
         input_ids = np.array(result["input_ids"], dtype=object)
 
         # Find every occurance of role="true"
-        true_occurances = [find_subarray(input_ids[i], role_true_input_ids) for i in range(len(input_ids))]
+        true_occurances = [find_subarray(input_ids[i], role_true_ids) for i in range(len(input_ids))]
         # Find every occurance of role="false"
-        false_occurances = [find_subarray(input_ids[i], role_false_input_ids) for i in range(len(input_ids))]
+        false_occurances = [find_subarray(input_ids[i], role_false_ids) for i in range(len(input_ids))]
 
         # Offset the true and false occurances to reach the "true" or "false" token
         for i in range(len(input_ids)):
@@ -87,6 +88,11 @@ else:
     print("Loading processed dataset from disk")
     lm_datasets = load_from_disk("dataset_cache/")
 
+def compute_metrics(eval_pred):
+    logits, labels = eval_pred
+    predictions = np.argmax(logits, axis=-1)
+    return compute_classification_metrics(labels, predictions)
+
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm_probability=1.0)
 
 args = TrainingArguments(output_dir="output", report_to="wandb")
@@ -96,6 +102,7 @@ trainer = Trainer(
     train_dataset=lm_datasets["train"],
     eval_dataset=lm_datasets["test"],
     args=args,
+    compute_metrics=compute_metrics,
 )
 
 train_result = trainer.train()
