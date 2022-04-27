@@ -8,7 +8,7 @@ from datasets import load_dataset, load_from_disk, load_metric
 import os
 
 from util import find_subarray
-from eval import compute_classification_metrics
+from eval import compute_classification_metrics, preprocess_logits_for_metrics
 
 model = AutoModelForMaskedLM.from_pretrained('microsoft/codebert-base-mlm')
 tokenizer = AutoTokenizer.from_pretrained('microsoft/codebert-base-mlm',
@@ -88,11 +88,6 @@ else:
     print("Loading processed dataset from disk")
     lm_datasets = load_from_disk("dataset_cache/")
 
-def compute_metrics(eval_pred):
-    logits, labels = eval_pred
-    predictions = np.argmax(logits, axis=-1)
-    return compute_classification_metrics(labels, predictions)
-
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm_probability=1.0)
 
 args = TrainingArguments(output_dir="output", report_to="wandb")
@@ -102,7 +97,8 @@ trainer = Trainer(
     train_dataset=lm_datasets["train"],
     eval_dataset=lm_datasets["test"],
     args=args,
-    compute_metrics=compute_metrics,
+    compute_metrics=compute_classification_metrics,
+    preprocess_logits_for_metrics=preprocess_logits_for_metrics,
 )
 
 train_result = trainer.train()
